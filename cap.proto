@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package cap;
+
+message Peer {
+  string Id = 1;                 // Peer unique id
+  repeated string Addresses = 2; // peer ip address list
+};
+
+message StreamPacket {
+  string PeerId = 1;
+  bytes Content = 2;
+}
+
+service NetworkStream {
+  rpc Handle(stream StreamPacket) returns (stream StreamPacket);
+};
+
+service Store {};
+
+service Application {};
