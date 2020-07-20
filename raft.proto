@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package raft;
+
+enum Status {
+  Leader = 0;
+  Follower = 1;
+  Candidate = 2;
+}
+
+message RequestVote {}
+message ResponseVote {}
+
+message RequestAppendEntries {}
+message ResponseAppendEntries {}
+
+service Peer {
+  rpc Vote(RequestVote) returns (ResponseVote);
+  rpc AppendEntries(RequestAppendEntries) returns (ResponseAppendEntries);
+}
