@@ -8,13 +8,6 @@ enum Status {
   Candidate = 2;
 }
 
-message Peer {
-  string id = 1;
-  repeated string addresses = 2;
-}
-// Cluster config message
-message Cluster { repeated Peer peers = 1; }
-
 // Receiver implementation:
 // 1. Reply false if term < currentTerm (§5.1)
 // 2. If votedFor is null or candidateId, and candidate’s log is at
