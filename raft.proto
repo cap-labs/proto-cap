@@ -43,6 +43,19 @@ message RequestAppendEntries {
   int64 leaderCommit = 6;     // leader’s commitIndex
 }
 
+message Entry {
+
+  enum Type {
+    normal = 0;
+    changeCluster = 1;
+  }
+
+  int64 index = 1; // index of candidate’s last log entry
+  int64 term = 2;  // term of candidate’s last log entry
+  Type type = 3;   // entry type
+  bytes data = 4;  // entry data
+}
+
 message ResponseAppendEntries {
   int64 term = 1;   // currentTerm, for leader to update itself
   bool success = 2; // true if follower contained entry matching prevLogIndex
@@ -73,6 +86,7 @@ message RequestInstallSnapshot {
   bytes data = 6; // raw bytes of the snapshot chunk, starting at offset
   bool done = 7;  // true if this is the last chunk
 }
+
 message ResponseInstallSnapshot {}
 
 service RaftStateMachine {
