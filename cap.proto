@@ -2,16 +2,6 @@ syntax = "proto3";
 
 package cap;
 
-message Peer {
-  string Id = 1;                 // Peer unique id
-  repeated string Addresses = 2; // peer ip address list
-};
-
-// Cluster the peers collection
-message Cluster {
-  repeated Peer peers = 1; // Peers
-}
-
 message StreamPacket {
   string PeerId = 1;
   bytes Content = 2;

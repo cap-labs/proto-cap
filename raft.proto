@@ -2,6 +2,23 @@ syntax = "proto3";
 
 package raft;
 
+message Peer {
+  string Id = 1;                 // Peer unique id
+  repeated string Addresses = 2; // peer ip address list
+};
+
+// Cluster the peers collection
+message Cluster {
+  // Peers
+  repeated Peer peers = 1;
+  // the cluster leader heartbeat timeout ticks
+  uint64 heartbeatTimeout = 2;
+  // If a follower receives no communication over a period of time called the
+  // election timeout, then it assumes there is no vi- able leader and begins an
+  // election to choose a new leader
+  uint64 electionTimeout = 3;
+}
+
 enum Status {
   Leader = 0;
   Follower = 1;
@@ -13,14 +30,14 @@ enum Status {
 // 2. If votedFor is null or candidateId, and candidate’s log is at
 //    least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)
 message RequestVote {
-  int64 term = 1;         // candidate’s term
-  string candidateId = 2; // andidate requesting vote
-  int64 lastLogIndex = 3; // index of candidate’s last log entry
-  int64 lastLogTerm = 4;  // term of candidate’s last log entry
+  uint64 term = 1;         // candidate’s term
+  string candidateId = 2;  // andidate requesting vote
+  uint64 lastLogIndex = 3; // index of candidate’s last log entry
+  uint64 lastLogTerm = 4;  // term of candidate’s last log entry
 }
 
 message ResponseVote {
-  int64 term = 1;       // currentTerm, for candidate to update itself
+  uint64 term = 1;      // currentTerm, for candidate to update itself
   bool voteGranted = 2; // true means candidate received vote
 }
 // Receiver implementation:
@@ -34,13 +51,13 @@ message ResponseVote {
 // 5. If leaderCommit > commitIndex, set commitIndex =
 //    min(leaderCommit, index of last new entry)
 message RequestAppendEntries {
-  int64 term = 1;         // leader’s term
-  string leaderId = 2;    // so follower can redirect clients
-  int64 prevLogIndex = 3; // index of log entry immediately preceding new ones
-  int64 prevLogTerm = 4;  // term of prevLogIndex entry
+  uint64 term = 1;         // leader’s term
+  string leaderId = 2;     // so follower can redirect clients
+  uint64 prevLogIndex = 3; // index of log entry immediately preceding new ones
+  uint64 prevLogTerm = 4;  // term of prevLogIndex entry
   repeated bytes entries = 5; // log entries to store (empty for heartbeat; may
                               // send more than one for efficiency)
-  int64 leaderCommit = 6;     // leader’s commitIndex
+  uint64 leaderCommit = 6;    // leader’s commitIndex
 }
 
 message Entry {
@@ -50,14 +67,14 @@ message Entry {
     changeCluster = 1;
   }
 
-  int64 index = 1; // index of candidate’s last log entry
-  int64 term = 2;  // term of candidate’s last log entry
-  Type type = 3;   // entry type
-  bytes data = 4;  // entry data
+  uint64 index = 1; // index of candidate’s last log entry
+  uint64 term = 2;  // term of candidate’s last log entry
+  Type type = 3;    // entry type
+  bytes data = 4;   // entry data
 }
 
 message ResponseAppendEntries {
-  int64 term = 1;   // currentTerm, for leader to update itself
+  uint64 term = 1;  // currentTerm, for leader to update itself
   bool success = 2; // true if follower contained entry matching prevLogIndex
                     // and prevLogTerm
 }
@@ -76,13 +93,13 @@ message ResponseAppendEntries {
 // 8. Reset state machine using snapshot contents (and load
 //    snapshot’s cluster configuration)
 message RequestInstallSnapshot {
-  int64 term = 1;              // leader’s term
-  string leaderId = 2;         // so follower can redirect clients
-  int64 lastIncludedIndex = 3; // the snapshot replaces all entries up through
-                               // and including this index
-  int64 lastIncludedTerm = 4;  // term of lastIncludedIndex
-  int64 offset = 5;            // byte offset
-                               // where chunk is positioned in the snapshot file
+  uint64 term = 1;              // leader’s term
+  string leaderId = 2;          // so follower can redirect clients
+  uint64 lastIncludedIndex = 3; // the snapshot replaces all entries up through
+                                // and including this index
+  uint64 lastIncludedTerm = 4;  // term of lastIncludedIndex
+  uint64 offset = 5;            // byte offset
+                     // where chunk is positioned in the snapshot file
   bytes data = 6; // raw bytes of the snapshot chunk, starting at offset
   bool done = 7;  // true if this is the last chunk
 }
@@ -93,4 +110,21 @@ service RaftStateMachine {
   rpc Vote(RequestVote) returns (ResponseVote);
   rpc AppendEntries(RequestAppendEntries) returns (ResponseAppendEntries);
   rpc InstallSnapshot(RequestInstallSnapshot) returns (ResponseInstallSnapshot);
+}
+
+message RequestExec {
+  bytes data = 1; // entry data
+}
+
+message ResponseExec {
+  string leader = 1; // redirect if leader != ''
+}
+
+message ResponseCluster {
+  string leader = 1; // redirect if leader != ''
+}
+
+service Node {
+  rpc Exec(RequestExec) returns (ResponseExec);
+  rpc NewCluster(Cluster) returns (ResponseCluster);
 }
