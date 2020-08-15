@@ -3,8 +3,8 @@ syntax = "proto3";
 package raft;
 
 message Peer {
-  string Id = 1;                 // Peer unique id
-  repeated string Addresses = 2; // peer ip address list
+  string id = 1;                 // Peer unique id
+  repeated string addresses = 2; // peer ip address list
 };
 
 // Cluster the peers collection
@@ -20,9 +20,9 @@ message Cluster {
 }
 
 enum Status {
-  Leader = 0;
-  Follower = 1;
-  Candidate = 2;
+  leader = 0;
+  follower = 1;
+  candidate = 2;
 }
 
 // Receiver implementation:
@@ -112,19 +112,19 @@ service RaftStateMachine {
   rpc InstallSnapshot(RequestInstallSnapshot) returns (ResponseInstallSnapshot);
 }
 
-message RequestExec {
+message CommandRequest {
   bytes data = 1; // entry data
 }
 
-message ResponseExec {
+message CommandResponse {
   string leader = 1; // redirect if leader != ''
 }
 
-message ResponseCluster {
+message ChangeClusterResponse {
   string leader = 1; // redirect if leader != ''
 }
 
-service Node {
-  rpc Exec(RequestExec) returns (ResponseExec);
-  rpc NewCluster(Cluster) returns (ResponseCluster);
+service Consensus {
+  rpc Command(CommandRequest) returns (CommandResponse);
+  rpc ChangeCluster(Cluster) returns (ChangeClusterResponse);
 }
