@@ -2,15 +2,40 @@ syntax = "proto3";
 
 package cap;
 
-message StreamPacket {
-  string PeerId = 1;
-  bytes Content = 2;
+option go_package = 'github.com/cap-labs/go-cap;cap';
+
+message Message {
+  string from = 1;   /// message from node
+  string to = 2;     /// message send to
+  bytes content = 3; /// message content
 }
 
-service NetworkStream {
-  rpc Handle(stream StreamPacket) returns (stream StreamPacket);
-};
+/// The network service
+service Networking { rpc Handle(stream Message) returns (stream Message); }
 
-service Store {};
+/// The Application service
+service Application {}
 
-service Application {};
+message ConsensusRequest {}
+
+message ConsensusResponse {}
+
+service Consensus { rpc Handle(ConsensusRequest) returns (ConsensusResponse); }
+
+message AllocStateRequest {}
+
+message AllocStateResponse {}
+
+message StateSetRequest {}
+
+message StateSetResponse {}
+
+message StateGetRequest {}
+
+message StateGetResponse {}
+
+service Storage {
+  rpc AllocState(AllocStateRequest) returns (AllocStateResponse);
+  rpc StateSet(StateSetRequest) returns (StateSetResponse);
+  rpc StateGet(StateGetRequest) returns (StateGetResponse);
+}
