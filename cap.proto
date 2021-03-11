@@ -10,32 +10,66 @@ message Message {
   bytes content = 3; /// message content
 }
 
-/// The network service
-service Networking { rpc Handle(stream Message) returns (stream Message); }
+message ConsensusRequest { bytes content = 1; }
+
+message ConsensusResponse {
+  oneof content {
+    Message sendMessage = 1;           // message send to node
+    ApplicationRequest appRequest = 2; // application request
+  }
+}
+
+message ApplicationRequest { bytes content = 1; }
+
+message ApplicationResponse { StateSetRequest stateSet = 1; }
+
+message StateSet {
+  bytes key = 2;   // State set key word
+  bytes value = 3; // State set value
+}
+
+message StateSetRequest {
+  string state = 1;               // State to set
+  repeated StateSet batchSet = 2; // State set batch
+  uint32 maxSize = 3;             // State max size
+}
+
+message StateSetResponse {
+  uint32 currentSize = 1; // State current size after set value
+}
+
+message StateGetRequest {
+  repeated string keys = 1; // State get by keys
+}
+
+message StateGetResponse {
+  repeated bytes values = 1; // State get values
+  uint32 currentSize = 2;    // State current size
+}
+
+message PeerSetRequest {
+  repeated string urls = 1; // peer set
+}
+
+message PeerSetResponse {}
 
 /// The Application service
-service Application {}
+service Application {
+  rpc Handle(ApplicationRequest) returns (ApplicationResponse);
+}
 
-message ConsensusRequest {}
-
-message ConsensusResponse {}
-
+/// The consensus engine api
 service Consensus { rpc Handle(ConsensusRequest) returns (ConsensusResponse); }
 
-message AllocStateRequest {}
+/// The network service
+service Networking {
+  rpc Handle(stream Message) returns (stream Message);
+  /// Update networking peer set
+  rpc PeerSet(PeerSetRequest) returns (PeerSetResponse);
+}
 
-message AllocStateResponse {}
-
-message StateSetRequest {}
-
-message StateSetResponse {}
-
-message StateGetRequest {}
-
-message StateGetResponse {}
-
+/// Storage service
 service Storage {
-  rpc AllocState(AllocStateRequest) returns (AllocStateResponse);
   rpc StateSet(StateSetRequest) returns (StateSetResponse);
   rpc StateGet(StateGetRequest) returns (StateGetResponse);
 }
