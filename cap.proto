@@ -4,72 +4,110 @@ package cap;
 
 option go_package = 'github.com/cap-labs/go-cap;cap';
 
-message Message {
-  string from = 1;   /// message from node
-  string to = 2;     /// message send to
-  bytes content = 3; /// message content
+/// Transport packet object
+message Packet {
+  string from = 1; // Packet from peer id
+  string to = 2;   // Packet to peer id
+  bytes data = 3;  // Packet data field
 }
 
-message ConsensusRequest { bytes content = 1; }
-
-message ConsensusResponse {
-  oneof content {
-    Message sendMessage = 1;           // message send to node
-    ApplicationRequest appRequest = 2; // application request
-  }
+/// Transport service
+service Transport {
+  /// handle transport send/recv packet
+  rpc handle(stream Packet) returns (stream Packet);
 }
 
-message ApplicationRequest { bytes content = 1; }
-
-message ApplicationResponse { StateSetRequest stateSet = 1; }
-
-message StateSet {
-  bytes key = 2;   // State set key word
-  bytes value = 3; // State set value
+message PutPeerRequest {
+  repeated string addrs = 1; // peers addr
 }
 
-message StateSetRequest {
-  string state = 1;               // State to set
-  repeated StateSet batchSet = 2; // State set batch
-  uint32 maxSize = 3;             // State max size
+message PutPeerResponse {}
+
+message GetPeerRequest {
+  string peers = 1; // peer id array
 }
 
-message StateSetResponse {
-  uint32 currentSize = 1; // State current size after set value
+message GetPeerResponse {
+  string addr = 1; // peer addr
 }
 
-message StateGetRequest {
-  repeated string keys = 1; // State get by keys
+service PeerStore {
+  /// set peers
+  rpc put(PutPeerRequest) returns (PutPeerResponse);
+  /// get peers
+  rpc get(GetPeerRequest) returns (GetPeerResponse);
 }
 
-message StateGetResponse {
-  repeated bytes values = 1; // State get values
-  uint32 currentSize = 2;    // State current size
+message ExecRequest {
+  bytes data = 1; //
 }
 
-message PeerSetRequest {
-  repeated string urls = 1; // peer set
+message ExecResponse {}
+
+service App {
+  /// exec
+  rpc exec(ExecRequest) returns (ExecResponse);
 }
 
-message PeerSetResponse {}
+/// RPC data packet
+message RPCPacket { bytes data = 1; }
 
-/// The Application service
-service Application {
-  rpc Handle(ApplicationRequest) returns (ApplicationResponse);
+service RPC {
+  /// dispatch rpc packet
+  rpc dispatch(RPCPacket) returns (RPCPacket);
 }
 
-/// The consensus engine api
-service Consensus { rpc Handle(ConsensusRequest) returns (ConsensusResponse); }
-
-/// The network service
-service Networking {
-  rpc Handle(stream Message) returns (stream Message);
-  /// Update networking peer set
-  rpc PeerSet(PeerSetRequest) returns (PeerSetResponse);
+/// Put state request message
+message PutStateRequest {
+  bytes state = 1;           /// state name
+  uint64 capacity = 2;       /// advise state maximum storage capacity in bytes
+  repeated bytes keys = 3;   /// Put value associate key
+  repeated bytes values = 4; /// Put value data
 }
 
-/// Storage service
-service Storage {
-  rpc StateSet(StateSetRequest) returns (StateSetResponse);
-  rpc StateGet(StateGetRequest) returns (StateGetResponse);
+/// Put state response message
+message PutStateResponse {
+  bytes state = 1;    /// state name
+  uint64 size = 2;    /// state current storage size in bytes
+  uint64 written = 3; /// written data in bytes, zero if out of capacity
+                      /// indicate in PutStateRequest
+}
+
+/// batch put state request
+message BatchPutStateRequest {
+  repeated PutStateRequest batch = 1; /// request array
+}
+
+/// batch put state response
+message BatchPutStateResponse {
+  repeated PutStateResponse batch = 1; ///  response array
+}
+
+message GetStateRequest {
+  bytes state = 1;         /// state name
+  repeated bytes keys = 3; /// get value associate keys
+}
+
+message GetStateResponse {
+  bytes state = 1;           /// state name
+  uint64 size = 2;           /// state current storage size in bytes
+  repeated bytes values = 4; /// get values data
+}
+
+/// batch put state request
+message BatchGetStateRequest {
+  repeated GetStateRequest batch = 1; /// request array
+}
+
+/// batch put state response
+message BatchGetStateResponse {
+  repeated GetStateResponse batch = 1; ///  response array
+}
+
+/// State persistence service
+service State {
+  rpc put(PutStateRequest) returns (PutStateResponse); //
+  rpc batchPut(BatchPutStateRequest) returns (BatchPutStateResponse);
+  rpc get(GetStateRequest) returns (GetStateResponse); //
+  rpc batchGet(BatchGetStateRequest) returns (BatchGetStateResponse);
 }
