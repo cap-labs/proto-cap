@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package blockchain;
+
+option go_package = "github.com/cap-labs/go-cap/blockchain;blockchain";
